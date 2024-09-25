@@ -4,7 +4,10 @@ import io.hhplus.tdd.Exception.InsufficientPointsException;
 import io.hhplus.tdd.Exception.UserNotFoundException;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.point.dto.PointHistory;
+import io.hhplus.tdd.point.dto.UserPoint;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.BadRequestException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -29,15 +32,16 @@ public class PointServiceImpl implements PointService {
 
         UserPoint userPoint = userPointTable.selectById(id);
 
-        if (userPoint.point() == 0 && userPoint.updateMillis() == 0) {
+        if (userPoint == null) {
             throw new UserNotFoundException("User with ID " + id + " not found.");
         }
+
         return userPoint;
     }
 
     //포인트 충전, 사용 히스토리 조회
     @Override
-    public List<PointHistory> getUserPointHistories(long id) throws UserNotFoundException {
+    public List<PointHistory> getUserPointHistories(long id) throws UserNotFoundException, IllegalArgumentException {
         List<PointHistory> userPointList = pointHistoryTable.selectAllByUserId(id);
 
         if(userPointList.isEmpty()) {
@@ -55,7 +59,8 @@ public class PointServiceImpl implements PointService {
             throw new IllegalArgumentException("Amount must be greater than zero.");
         }
 
-        UserPoint updatedPoint = userPointTable.insertOrUpdate(id, amount);
+        UserPoint userPoint = userPointTable.selectById(id);
+        UserPoint updatedPoint = userPointTable.insertOrUpdate(id, userPoint.point() + amount);
 
         pointHistoryTable.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
@@ -79,7 +84,9 @@ public class PointServiceImpl implements PointService {
             throw new InsufficientPointsException("User doesn't have enough charging points.");
         }
 
-        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, amount);
+        long afterPoint = userPoint.point() - amount;
+
+        UserPoint updatedUserPoint = userPointTable.insertOrUpdate(id, afterPoint);
         pointHistoryTable.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
 
         return updatedUserPoint;

@@ -1,9 +1,11 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.point.dto.PointHistory;
+import io.hhplus.tdd.point.dto.PointRequest;
+import io.hhplus.tdd.point.dto.UserPoint;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -37,8 +39,12 @@ public class PointController {
     public List<PointHistory> history(
             @PathVariable long id
     ) {
+        if (id < 0) {
+            throw new IllegalArgumentException("ID must be a positive number.");
+        }
+
         List<PointHistory> pointHistories = pointService.getUserPointHistories(id);
-        return List.of();
+        return pointHistories;
     }
 
     /**
@@ -47,9 +53,9 @@ public class PointController {
     @PatchMapping("{id}/charge")
     public UserPoint charge(
             @PathVariable long id,
-            @RequestBody long amount
+            @RequestBody PointRequest request
     ) {
-        UserPoint userPoint = pointService.chargePoint(id, amount);
+        UserPoint userPoint = pointService.chargePoint(id, request.amount());
 
         return userPoint;
     }
@@ -60,9 +66,9 @@ public class PointController {
     @PatchMapping("{id}/use")
     public UserPoint use(
             @PathVariable long id,
-            @RequestBody long amount
+            @RequestBody PointRequest request
     ) {
-        UserPoint userPoint = pointService.usePoint(id, amount);
+        UserPoint userPoint = pointService.usePoint(id, request.amount());
 
         return userPoint;
     }

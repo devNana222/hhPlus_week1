@@ -3,6 +3,9 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.Exception.InsufficientPointsException;
 import io.hhplus.tdd.Exception.UserNotFoundException;
+import io.hhplus.tdd.point.dto.PointHistory;
+import io.hhplus.tdd.point.dto.UserPoint;
+import org.apache.coyote.BadRequestException;
 
 import java.util.List;
 
@@ -15,7 +18,7 @@ public interface PointService {
      * */
 
     UserPoint getUserPointById(long id) throws UserNotFoundException;
-    List<PointHistory> getUserPointHistories (long id) throws UserNotFoundException;
+    List<PointHistory> getUserPointHistories (long id) throws UserNotFoundException, IllegalArgumentException;
     UserPoint chargePoint(long id, long amount) throws UserNotFoundException;
     UserPoint usePoint(long id, long amount) throws UserNotFoundException,InsufficientPointsException;
 }

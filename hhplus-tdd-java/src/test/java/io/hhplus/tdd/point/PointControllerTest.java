@@ -34,7 +34,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 @WebMvcTest(PointController.class)
-@Import(ApiControllerAdvice.class)
+
 public class PointControllerTest {
 
 

@@ -59,6 +59,10 @@ public class PointServiceImpl implements PointService {
             throw new IllegalArgumentException("Amount must be greater than zero.");
         }
 
+        if(amount <= 1000){
+            throw new IllegalArgumentException("Amount must be more than 1000.");
+        }
+
         UserPoint userPoint = userPointTable.selectById(id);
         UserPoint updatedPoint = userPointTable.insertOrUpdate(id, userPoint.point() + amount);
 
@@ -74,6 +78,10 @@ public class PointServiceImpl implements PointService {
     public UserPoint usePoint(long id, long amount) throws UserNotFoundException, InsufficientPointsException {
         if(amount <= 0){
             throw new IllegalArgumentException("Amount must be greater than zero.");
+        }
+
+        if(amount >= 5000){
+            throw new IllegalArgumentException("Amount must be less than 5000.");
         }
 
         UserPoint userPoint = userPointTable.selectById(id);

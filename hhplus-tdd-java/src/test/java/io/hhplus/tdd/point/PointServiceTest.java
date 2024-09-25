@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
-@Import(ApiControllerAdvice.class)
 @ExtendWith(MockitoExtension.class)
 public class PointServiceTest {
 
@@ -40,18 +39,19 @@ public class PointServiceTest {
 
 
     @Test
-    @DisplayName("성공적인 포인트 조회")
+    @DisplayName("🟢성공적인 포인트 조회")
     public void testPoint_Success() throws Exception {
+        // given
         Long userId = 111L;
         Long point = 500L;
         long currentTime = System.currentTimeMillis();
 
-        // given
         UserPoint userPoint = new UserPoint(userId, point, currentTime);
 
+        // when
         when(userPointTable.selectById(userId)).thenReturn(userPoint);
 
-        // when
+        // then
         UserPoint result = pointService.getUserPointById(userId);
 
         assertEquals(result.id(), userId);
@@ -60,11 +60,9 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("없는 회원의 포인트 조회")
+    @DisplayName("🔴없는 회원의 포인트 조회")
     public void testPoint_Fail() throws Exception {
         Long userId = 222L;
-        Long point = 500L;
-        long currentTime = System.currentTimeMillis();
 
         assertThrows(UserNotFoundException.class, () -> {
             pointService.getUserPointById(userId);
@@ -72,22 +70,21 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("성공적인 포인트 히스토리 조회")
+    @DisplayName("🟢성공적인 포인트 히스토리 조회")
     public void testPointHistory_Success() throws Exception {
+        // given
         long count = 1;
         long currentTime = System.currentTimeMillis();
-
         long userId = 111L;
-        // given
+
         List<PointHistory> pointHistories = List.of(
                 new PointHistory(count, userId, 500, TransactionType.CHARGE, System.currentTimeMillis()),
                 new PointHistory(count++, userId, 300, TransactionType.USE, System.currentTimeMillis()),
                 new PointHistory(count++, userId, 200, TransactionType.CHARGE, currentTime)
         );
-
+        // when: 서비스 메서드 호출
         when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(pointHistories);
 
-        // when: 서비스 메서드 호출
         List<PointHistory> result = pointService.getUserPointHistories(userId);
 
         // then: 결과 검증
@@ -97,7 +94,7 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 유저의 포인트 히스토리 조회 실패")
+    @DisplayName("🔴존재하지 않는 유저의 포인트 히스토리 조회 실패")
     public void testGetUserPointHistories_UserNotFound() throws Exception {
         long userId = 222L;
 
@@ -111,11 +108,11 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("유저 포인트 충전 테스트 - 성공 케이스")
+    @DisplayName("🟢유저 포인트 충전 테스트 - 성공 케이스")
     public void testChargePoint_Success() {
         // given
         long userId = 1111;
-        long chargeAmount = 500;
+        long chargeAmount = 1500;
         long currentPoint = 1000;
 
         // 기존 포인트 상태 모킹
@@ -139,7 +136,7 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("유저 포인트 충전 테스트 - 잘못된 금액일 때 예외 발생")
+    @DisplayName("🔴유저 포인트 충전 테스트 - 잘못된 금액일 때 예외 발생")
     public void testChargePoint_InvalidAmount() {
         // given
         long userId = 1111;
@@ -156,7 +153,24 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("유저 포인트 사용 테스트 - 성공 케이스")
+    @DisplayName("🔴유저 포인트 충전 테스트 - 최소 충전금액 미달 시 예외 발생")
+    public void testChargePoint_LessAmount() {
+        // given
+        long userId = 1111;
+        long invalidAmount = 500; //1000원 미만으로 충전
+
+        // when & then: 잘못된 금액으로 충전 시 예외 발생 확인
+        assertThrows(IllegalArgumentException.class, () -> {
+            pointService.chargePoint(userId, invalidAmount);
+        });
+
+        // verify: 히스토리나 포인트 업데이트가 일어나지 않았는지 검증
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("🟢유저 포인트 사용 테스트 - 성공 케이스")
     public void testUsePoint_Success() throws Exception {
         long userId = 111L;
         long initialPoint = 2000L;
@@ -180,7 +194,7 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("유저 포인트 사용 테스트 - 실패 케이스 / 정상적인 금액 데이터가 아닐 때")
+    @DisplayName("🔴유저 포인트 사용 테스트 - 실패 케이스 / 정상적인 금액 데이터가 아닐 때")
     public void testUsePoint_InvalidAmount() {
         // given
         long userId = 1111;
@@ -197,7 +211,7 @@ public class PointServiceTest {
     }
 
     @Test
-    @DisplayName("유저 포인트 사용 테스트 - 실패 케이스 / 사용 금액이 실제 금액보다 많을 때")
+    @DisplayName("🔴유저 포인트 사용 테스트 - 실패 케이스 / 사용 금액이 실제 금액보다 많을 때")
     public void testUsePoint_LessAmount() {
         // given
         long userId = 1111;
@@ -211,6 +225,23 @@ public class PointServiceTest {
 
         // when & then: 가진 금액보다 많은 포인트 사용 시 예외 발생 확인
         assertThrows(InsufficientPointsException.class, () -> {
+            pointService.usePoint(userId, invalidAmount);
+        });
+
+        // verify: 히스토리나 포인트 업데이트가 일어나지 않았는지 검증
+        verify(userPointTable, never()).insertOrUpdate(anyLong(), anyLong());
+        verify(pointHistoryTable, never()).insert(anyLong(), anyLong(), any(), anyLong());
+    }
+
+    @Test
+    @DisplayName("🔴유저 포인트 사용 테스트 - 실패 케이스 / 최대 사용금액을 넘었을 때")
+    public void testUsePoint_OverAmount() {
+        // given
+        long userId = 1111;
+        long invalidAmount = 7000;
+
+        // when & then: 잘못된 금액으로 충전 시 예외 발생 확인
+        assertThrows(IllegalArgumentException.class, () -> {
             pointService.usePoint(userId, invalidAmount);
         });
 

@@ -1,22 +1,17 @@
 package io.hhplus.tdd.point;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.hhplus.tdd.ApiControllerAdvice;
 import io.hhplus.tdd.Exception.InsufficientPointsException;
 import io.hhplus.tdd.Exception.UserNotFoundException;
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.point.dto.PointHistory;
 import io.hhplus.tdd.point.dto.UserPoint;
-import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.annotation.Import;
-
 
 import java.util.Collections;
 import java.util.List;

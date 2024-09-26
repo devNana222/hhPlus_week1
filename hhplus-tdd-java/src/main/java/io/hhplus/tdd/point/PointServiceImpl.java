@@ -8,11 +8,10 @@ import io.hhplus.tdd.point.repository.PointHistoryRepository;
 import io.hhplus.tdd.point.repository.UserPointRepository;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.BadRequestException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @Slf4j
@@ -22,6 +21,7 @@ public class PointServiceImpl implements PointService {
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
 
+    private final ReentrantLock lock = new ReentrantLock();  // 동시성 제어를 위한 Lock
 
     // 포인트 조회
     @Override
@@ -34,7 +34,7 @@ public class PointServiceImpl implements PointService {
         }
 
         return userPoint;
-    }//controller에서는 service의존받고 /service에서는 entity와의 결합을 느슨하게 하기 위해 repository ,repositoryimpl을 만들고 
+    }
 
     //포인트 충전, 사용 히스토리 조회
     @Override
@@ -51,49 +51,64 @@ public class PointServiceImpl implements PointService {
     //포인트 충전
     @Override
     public UserPoint chargePoint(long id, long amount) throws UserNotFoundException {
+        lock.lock();  // 자원에 대한 잠금
+        try {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("Amount must be greater than zero.");
+            }
 
-        if(amount <= 0){
-            throw new IllegalArgumentException("Amount must be greater than zero.");
+            if (amount < 1000) {
+                throw new IllegalArgumentException("Amount must be more than 1000.");
+            }
+
+            UserPoint userPoint = userPointRepository.selectById(id);
+            UserPoint updatedPoint = userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
+
+            pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
+
+            log.info(pointHistoryRepository.selectAllByUserId(id).toString()); //검증
+
+            return updatedPoint;
         }
-
-        if(amount < 1000){
-            throw new IllegalArgumentException("Amount must be more than 1000.");
+        finally {
+            lock.unlock();
         }
-
-        UserPoint userPoint = userPointRepository.selectById(id);
-        UserPoint updatedPoint = userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
-
-        pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
-
-        log.info(pointHistoryRepository.selectAllByUserId(id).toString()); //검증
-
-        return updatedPoint;
     }
+
+
 
     //포인트 사용
     @Override
     public UserPoint usePoint(long id, long amount) throws UserNotFoundException, InsufficientPointsException {
-        if(amount <= 0){
-            throw new IllegalArgumentException("Amount must be greater than zero.");
+        lock.lock();  // 자원에 대한 잠금
+        try {
+            if (amount <= 0) {
+                throw new IllegalArgumentException("Amount must be greater than zero.");
+            }
+
+            if (amount > 5000) {
+                throw new IllegalArgumentException("Amount must be less than 5000.");
+            }
+
+            UserPoint userPoint = userPointRepository.selectById(id);
+
+            if (userPoint.point() < amount) {
+                log.error("User doesn't have enough charging points.");
+
+                throw new InsufficientPointsException("User doesn't have enough charging points.");
+            }
+
+            long afterPoint = userPoint.point() - amount;
+
+            UserPoint updatedUserPoint = userPointRepository.insertOrUpdate(id, afterPoint);
+            pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
+
+            log.info(pointHistoryRepository.selectAllByUserId(id).toString()); //검증
+
+            return updatedUserPoint;
         }
-
-        if(amount > 5000){
-            throw new IllegalArgumentException("Amount must be less than 5000.");
+        finally {
+            lock.unlock();
         }
-
-        UserPoint userPoint = userPointRepository.selectById(id);
-
-        if(userPoint.point() < amount){
-            log.error("User doesn't have enough charging points.");
-
-            throw new InsufficientPointsException("User doesn't have enough charging points.");
-        }
-
-        long afterPoint = userPoint.point() - amount;
-
-        UserPoint updatedUserPoint = userPointRepository.insertOrUpdate(id, afterPoint);
-        pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
-
-        return updatedUserPoint;
     }
 }

@@ -1,12 +1,8 @@
 package io.hhplus.tdd.point;
 
-import io.hhplus.tdd.ApiControllerAdvice;
 import io.hhplus.tdd.Exception.UserNotFoundException;
-import io.hhplus.tdd.database.PointHistoryTable;
-import io.hhplus.tdd.database.UserPointTable;
 import io.hhplus.tdd.point.dto.PointHistory;
 import io.hhplus.tdd.point.dto.UserPoint;
-import org.apache.coyote.BadRequestException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,7 +10,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -23,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -44,14 +38,8 @@ public class PointControllerTest {
     @MockBean
     private PointService pointService;
 
-
-    /**
-     * 포인트 조회
-     * 1. 존재하는 유저 테스트
-     * 2. 존재하지 않는 유저 테스트
-     * */
     @Test
-    @DisplayName("GET /point/1111 존재하는 유저 테스트")
+    @DisplayName("🟢GET /point/1111 존재하는 유저 테스트")
     public void testPoint_Success() throws Exception {
         //given
         UserPoint mockUserPoint = new UserPoint(1111, 100,1000);
@@ -67,16 +55,8 @@ public class PointControllerTest {
     }
 
 
-    /**
-     * 포인트 충전/사용 히스토리 조회 테스트
-     * 1. 존재하는 유저
-     *  1-1. 유저는 존재하나 히스토리가 존재하지 않음.
-     *  1-2. 유저는 존재하나 충전 or 사용 히스토리만 있는 경우
-     * 2. 존재하지 않는 유저
-     * */
-
     @Test
-    @DisplayName("GET /point/1111/histories 존재하는 유저에 대한 테스트")
+    @DisplayName("🟢GET /point/1111/histories 존재하는 유저에 대한 테스트")
     public void testHistory_Success() throws Exception{
         long cursor = 1;
 
@@ -111,7 +91,7 @@ public class PointControllerTest {
 
 
     @Test
-    @DisplayName("GET /point/1234/histories 존재하는 유저가 포인트 내역이 없는 경우")
+    @DisplayName("🔴GET /point/1234/histories 존재하는 유저가 포인트 내역이 없는 경우")
     public void testHistory_Empty() throws Exception {
         //when
         when(pointService.getUserPointHistories(1234)).thenReturn(Collections.emptyList());
@@ -125,7 +105,7 @@ public class PointControllerTest {
     }
 
     @Test
-    @DisplayName("GET /point/2222/histories 존재하지 않는 유저 테스트")
+    @DisplayName("🔴GET /point/2222/histories 존재하지 않는 유저 테스트")
     public void testHistory_UserNotFound() throws Exception {
 
         //when
@@ -141,7 +121,7 @@ public class PointControllerTest {
     }
 
     @Test
-    @DisplayName("GET /point/-1111/histories 잘못된 파라미터가 들어왔을 때")
+    @DisplayName("🔴GET /point/-1111/histories 잘못된 파라미터가 들어왔을 때")
     public void testHistory_BadRequest() throws Exception {
         long invalidId = -1111;
 
@@ -151,16 +131,8 @@ public class PointControllerTest {
                 .andDo(print());
     }
 
-
-
-    /**
-     * 포인트 충전
-     * 1. 양수인 정수로 충전하는지
-     * 1-1. 충전 성공 시 히스토리에 쌓이는지
-     * 2. 회원인 사람만 충전
-     * */
     @Test
-    @DisplayName("PATCH /point/1111/charge 포인트가 정상적으로 충전되는지 확인.")
+    @DisplayName("🟢PATCH /point/1111/charge 포인트가 정상적으로 충전되는지 확인.")
     public void testCharge_Success() throws Exception {
         // given
         long userId = 1111;

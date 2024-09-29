@@ -38,7 +38,7 @@
 
   <code>CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();</code>
   
-👉🏻CompletableFuture 작업들이 완료될 때까지 기다렸다가 한번에 실행합니디ㅏ.
+👉🏻CompletableFuture 작업들이 완료될 때까지 기다렸다가 한번에 실행합니다.
   
 
 <code>
